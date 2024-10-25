@@ -21,6 +21,7 @@ function getRegisterAcitiveInstanceWorker(db, cfg) {
         },
         closer: async function () {
             try {
+                console.log("Unregistering instance");
                 if (isRegisteredInstance) {
                     await db.execute("UPDATE server SET status = ? WHERE instance_name = ?", ["inactive", cfg.instanceId]);
                     console.log("Unregistered instance")

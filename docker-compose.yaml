@@ -3,6 +3,7 @@ services:
   mysql:
     image: mysql:8.0.39
     hostname: localhost
+    # Typically these should be in secret, but for 1 command for testing, putting unharm secret here is okay
     environment:
       - MYSQL_ROOT_PASSWORD=rootpassword
       - MYSQL_DATABASE=demo
@@ -21,10 +22,30 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3001:3000"
+    # Typically these should be in secret, but for 1 command for testing, putting unharm secret here is okay
     environment:
       - INSTANCE_ID=fi-hel
       - COUNTRY=FI
       - ADVERTISED_ADDRESS=localhost:3001
+      - DATABASE_USERNAME=root
+      - DATABASE_PASSWORD=rootpassword
+      - DATABASE_ADDRESS=mysql
+      - DATABASE_NAME=demo
+    networks:
+      - backend
+  se-sto-service:
+    restart:
+      always
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3000"
+    # Typically these should be in secret, but for 1 command for testing, putting unharm secret here is okay
+    environment:
+      - INSTANCE_ID=se-sto
+      - COUNTRY=SE
+      - ADVERTISED_ADDRESS=localhost:3002
       - DATABASE_USERNAME=root
       - DATABASE_PASSWORD=rootpassword
       - DATABASE_ADDRESS=mysql
