@@ -7,6 +7,7 @@ const WebSocket = require('ws');
 const { runFuncs, assertNotNull } = require('./utils/utils');
 const { setupAppEndpoint } = require('./api/server');
 const { serveWebSocket, serveMatchQueueFuncFactory } = require('./endpoints/game');
+const { getRegisterAcitiveInstanceWorker, getUnregisterActiveInstanceWorker } = require('./service/deploymentService');
 
 const context = {
     closers: [],
@@ -45,6 +46,7 @@ async function setUpConfig() {
 }
 
 async function setupDatabaseConnetion() {
+    console.log("Setting up Database connection")
     if (!context.databaseConnection) {
         const connection = await mysql.createConnection({
             host: context.cfg.databaseAddress,
@@ -67,67 +69,40 @@ async function setupDatabaseConnetion() {
 
 
 async function setUpResigtrationAndUnregistrationRunner() {
-    context.runners.push(registerActiveInstance);
-    context.closers.push(unregisterInstance);
+    const {runner, closer} = getRegisterAcitiveInstanceWorker(context.databaseConnection, context.cfg)
+    context.runners.push(runner);
+    context.closers.push(closer);
 }
 
-// TODO: to refactor
-async function registerActiveInstance() {
-    let [rows, fields] = await context.databaseConnection.execute("SELECT * FROM server WHERE instance_name = ? LIMIT 1", [context.cfg.instanceId])
-    if (rows.length !== 0) {
-        if (rows[0]["status"] === 'active') {
-            throw new Error("Error when joining server group: instance is already active");
-        }
-        else {
-            [rows, fields] = await context.databaseConnection.execute("UPDATE server SET status = ? WHERE instance_name = ?", ["active", context.cfg.instanceId])
-            context.isRegisteredInstance = true;
-        }
-    } else {
-        const row = [context.cfg.instanceId, context.cfg.instanceCountry, context.cfg.advertisedAddress, "active"];
-        [rows, fields] = await context.databaseConnection.execute("INSERT INTO `server` (instance_name, country, advertised_address, status) VALUES (?, ?, ?, ?)", row)
-        context.isRegisteredInstance = true;
-    }
 
-    console.log("Registerd to database");
-}
-
-// TODO: to refactor
-async function unregisterInstance() {
-    try {
-        if (context.isRegisteredInstance) {
-            await context.databaseConnection.execute("UPDATE server SET status = ? WHERE instance_name = ?", ["inactive", context.cfg.instanceId]);
-            console.log("Unregistered instance")
-        }
-    }
-    catch (err) {
-        console.log("Error closing database", err)
-    }
-}
 
 
 async function setUpServer() {
-    // Initialize the Express app and HTTP server
+    console.log("Setting up Server")
+
     context.app = express();
     context.server = http.createServer(context.app);
 
-    // Middleware for parsing JSON requests
     context.app.use(express.json());
 
-    // Serve a simple HTTP endpoint
     setupAppEndpoint(context.app, context.databaseConnection);
 }
 
 async function setUpWebSocketListener() {
+    console.log("Setting up WebSocket server")
+
     context.wss = new WebSocket.Server({ server: context.server });
     context.wss.on('connection', serveWebSocket(context.databaseConnection));
 }
 
 async function setUpGameMatchScheduler() {
+    console.log("Setting up Scheduler")
+
     let intervalId = undefined;
     context.runners.push( async () => {
         // interval could be configurable by env or database
         console.log("Starting scheduler");
-        intervalId = setInterval(serveMatchQueueFuncFactory(context.databaseConnection), 5000)
+        intervalId = setInterval(serveMatchQueueFuncFactory(context.databaseConnection), 20000)
     })
     context.closers.push( async () => {
         if (intervalId !== undefined) {
@@ -137,6 +112,8 @@ async function setUpGameMatchScheduler() {
 }
 
 async function setUpServerRunner() {
+    console.log("Setting up Server Runner")
+
     context.runners.push(
         async () => {
             console.log("STARTING SERVER");

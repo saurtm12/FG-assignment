@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS `match_history` (
     `match_id` INT NOT NULL,
     `player_id` INT NOT NULL,
     `input`  VARCHAR(255),
-    PRIMARY KEY (user_id, game_id)
+    PRIMARY KEY (match_id, player_id)
 );
 
 

@@ -69,14 +69,6 @@ function serveWebSocket(dbConnection) {
 // basically iterate games -> pools, and then sort and partitions
 // This will not handle, there is only 1 player in the queue :/
 function serveMatchQueueFuncFactory(dbConnection) {
-    // queueStore[1] = {}
-    // queueStore[1]["FI"] =
-    //     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15].map(id => {
-    //         return {
-    //             match_score: id / 10,
-    //             userId: id
-    //         }
-    //     })
     return function () {
         // Using map for not putting order in order
         Object.keys(queueStore).map(game => {
@@ -133,7 +125,7 @@ function startGame(gameId, group, dbConnection) {
         const match = createNewGame(gameId, group);
         group.map(player => player.match_id = match.match_id);
         gameStore[match.match_id] = group;
-        runMatch(gameId, group);
+        runMatch(match, group);
     }
     catch (err) {
         console.log("Error in starting the game");
@@ -156,13 +148,31 @@ function runMatch(match, group, dbConnection) {
         catch (err) {
             console.log("Error in parsing message from client", err)
         }
-    }))
+    }));
+
     group.map(client => client.ws.send(info));
     group.map(client => client.ws.send(COMMAND));
-    // Client should be notified when the COMMAND is dispatched
+    // Client should be response with input when the COMMAND is dispatched
+
     setTimeout(() => {
         try {
+            const inputNumbers = group.filter(player => player.provided_input !== undefined).map(player => player.provided_input);
+            // assuming game strategy is random between player input
+            // this can also be configurable by defining the fomula.
+            // To keep application small, and probably I could might introduce bug with parsing the formal game logic description
+            // I will demonstrate with only 1 hardcoded example
+            const GAME_LOGIC = "RAND" 
+            const randomIndex = Math.floor(Math.random() * inputNumbers.length);
+            const luckyNumber = inputNumbers[randomIndex];
 
+            const winners = group.filter(player => player.provided_input === luckyNumber).map(player => player.user_name).join(", ");
+            // notify client:
+            const info = `${winners} win! Game ended`;
+            console.log(info)
+            group.map(player => {
+                player.ws.send(info);
+            })
+            
             closeGame(group);
         }
         catch (err) {
@@ -171,14 +181,12 @@ function runMatch(match, group, dbConnection) {
         // Now decide who wins
 
         // And close
-    }, 10000) // interval for a game is 10 seconds
-
+    }, 20000) // interval for a game is 20 seconds
 }
 
 function closeGame(group) {
     group.map(client => {
-        client.ws.send("You win!");
-        client.ws.close("You win!");
+        client.ws.close(1000, "Socket closed");
     })
 }
 // it is supposed to save in mysql, but I think I have spend quite some time on this, and already showed the work how to interact with the db
