@@ -165,6 +165,7 @@ function runMatch(match, group, dbConnection) {
             const randomIndex = Math.floor(Math.random() * inputNumbers.length);
             const luckyNumber = inputNumbers[randomIndex];
 
+            // for room of 1 player, the player always win regardless if he put any input or not
             const winners = group.filter(player => player.provided_input === luckyNumber).map(player => player.user_name).join(", ");
             // notify client:
             const info = `${winners} win! Game ended`;

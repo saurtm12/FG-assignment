@@ -91,7 +91,10 @@ async function setUpServer() {
 async function setUpWebSocketListener() {
     console.log("Setting up WebSocket server")
 
-    context.wss = new WebSocket.Server({ server: context.server });
+    context.wss = new WebSocket.Server({ 
+        server: context.server,
+        path: "/ws"
+     });
     context.wss.on('connection', serveWebSocket(context.databaseConnection));
 }
 

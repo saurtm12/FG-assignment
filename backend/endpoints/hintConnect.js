@@ -35,6 +35,7 @@ WHERE
 // it typically should be encode by jwt, and when token is exchange to promoted server,
 // promoted server can use jwt again to claim the information back without extra query to db
 // for SIMPLICITY, I will only base64 encoding and decoding
+// and no timestamp injecting is done
 // return example: 
 // {token: "e2lkOiAiMSIsIG5hbWU6ICJkdWMifQ==", service: "localhost:3000"}
 // where token could be finally decode like this:
@@ -59,7 +60,7 @@ async function handleGetHint(dbConnection, userId, gameId, res) {
         delete payload.server_instance_name;
         res.json({
             token: btoa(JSON.stringify(payload)),
-            service: row.server_address
+            service: `${row.server_address}/ws`
         });
 
     }
