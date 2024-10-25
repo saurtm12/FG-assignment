@@ -1,5 +1,5 @@
 const { getAllGames, createGame } = require("../service/gameService");
-const { assertNotNull, writeError400 } = require("../utils/utils");
+const { assertNotNull, writeError400, writeError500 } = require("../utils/utils");
 
 async function handleCreateGame(dbConnection, game, res) {
     try {
@@ -12,7 +12,7 @@ async function handleCreateGame(dbConnection, game, res) {
     catch (err) {
         writeError400(res, "Error" + err + err.stack)
     }
-    
+
 }
 
 async function handleGetAllGames(dbConnection, res) {

@@ -2,10 +2,12 @@
 // See the test for understanding the input
 
 function calculateScore(user, formula) {
+    console.log(user);
     // define more variable here if formula has more variable
     // for now I used only level
     const level = user.user_level;
     // formula is, example "level / 10", eval will evaluate level / 10 by the variable
+    // using val() for simplicty
     const result = parseInt(Math.round(eval(formula)));
     // side effect here, but its okay for poc
     user.match_score = result;
@@ -15,6 +17,7 @@ function calculateScore(user, formula) {
 // example of match Formula: `${country}`
 function getPlayerPool(payload, matchFormula) {
     const country = payload.user_country;
+    // using val() for simplicty
     const result = eval(matchFormula);
     return result
 }

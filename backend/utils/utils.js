@@ -4,8 +4,8 @@ async function runFuncs(...funcs) {
     }
 }
 
-function assertNotNull(param, paramName=undefined) {
-    if (param === undefined || param === null || param === ""){
+function assertNotNull(param, paramName = undefined) {
+    if (param === undefined || param === null || param === "") {
         throw new Error(`Error: param ${paramName} is null`)
     }
 }
@@ -22,11 +22,11 @@ function writeError400(res, message) {
     })
 }
 
-function incrementIdFunctionGenerator(){
+function incrementIdFunctionGenerator() {
     let id = 0;
     return () => {
         id += 1;
-        return id; 
+        return id;
     }
 }
-module.exports = { runFuncs, assertNotNull, writeError400, incrementIdFunctionGenerator }
+module.exports = { runFuncs, assertNotNull, writeError400, writeError500, incrementIdFunctionGenerator }

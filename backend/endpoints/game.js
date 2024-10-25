@@ -128,7 +128,7 @@ function startGame(gameId, group, dbConnection) {
         runMatch(match, group);
     }
     catch (err) {
-        console.log("Error in starting the game");
+        console.log("Error in starting the game", err);
     }
 }
 

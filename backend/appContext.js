@@ -7,7 +7,7 @@ const WebSocket = require('ws');
 const { runFuncs, assertNotNull } = require('./utils/utils');
 const { setupAppEndpoint } = require('./api/server');
 const { serveWebSocket, serveMatchQueueFuncFactory } = require('./endpoints/game');
-const { getRegisterAcitiveInstanceWorker, getUnregisterActiveInstanceWorker } = require('./service/deploymentService');
+const { getRegisterAcitiveInstanceWorker } = require('./service/deploymentService');
 
 const context = {
     closers: [],
@@ -69,7 +69,7 @@ async function setupDatabaseConnetion() {
 
 
 async function setUpResigtrationAndUnregistrationRunner() {
-    const {runner, closer} = getRegisterAcitiveInstanceWorker(context.databaseConnection, context.cfg)
+    const { runner, closer } = getRegisterAcitiveInstanceWorker(context.databaseConnection, context.cfg)
     context.runners.push(runner);
     context.closers.push(closer);
 }
@@ -91,10 +91,10 @@ async function setUpServer() {
 async function setUpWebSocketListener() {
     console.log("Setting up WebSocket server")
 
-    context.wss = new WebSocket.Server({ 
+    context.wss = new WebSocket.Server({
         server: context.server,
         path: "/ws"
-     });
+    });
     context.wss.on('connection', serveWebSocket(context.databaseConnection));
 }
 
@@ -102,12 +102,12 @@ async function setUpGameMatchScheduler() {
     console.log("Setting up Scheduler")
 
     let intervalId = undefined;
-    context.runners.push( async () => {
+    context.runners.push(async () => {
         // interval could be configurable by env or database
         console.log("Starting scheduler");
         intervalId = setInterval(serveMatchQueueFuncFactory(context.databaseConnection), 20000)
     })
-    context.closers.push( async () => {
+    context.closers.push(async () => {
         if (intervalId !== undefined) {
             clearInterval(intervalId);
         }
@@ -122,7 +122,7 @@ async function setUpServerRunner() {
             console.log("STARTING SERVER");
             const PORT = process.env.PORT || 3000;
             context.server.listen(PORT, () => {
-                console.log(`Server is running on port ${PORT}`);
+                console.log(`Server is running on ${context.cfg.ADVERTISED_ADDRESS}`);
             });
         }
     )

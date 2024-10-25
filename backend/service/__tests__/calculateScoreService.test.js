@@ -20,7 +20,7 @@ describe('test getPlayerPool', () => {
     it('should return correct result with `${country}`', () => {
         const result = getPlayerPool({
             user_country: "FI"
-        }, "\`${country}-pool\`");
+        }, "`${country}-pool`");
         expect(result).toBe("FI-pool");
     });
 

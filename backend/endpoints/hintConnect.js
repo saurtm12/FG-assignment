@@ -50,6 +50,7 @@ WHERE
 // After this, client connect to localhost:3001 through websocket
 async function handleGetHint(dbConnection, userId, gameId, res) {
     try {
+        console.log({userId: userId, gameId: gameId})
         const [[row]] = await dbConnection.execute(GET_PROMOTED_SERVER_AND_PLAYER, [userId]);
         const game = await getGameInfo(gameId, dbConnection);
         const criteria = JSON.parse(game.match_formula);
