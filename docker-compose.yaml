@@ -1,0 +1,35 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:8.0.39
+    hostname: localhost
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=demo
+    ports:
+    # expose for debugging
+      - 3306:3306
+    networks:
+      - backend
+    volumes:
+      - ./mysql-init:/docker-entrypoint-initdb.d
+  fi-hel-service:
+    restart:
+      always
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      - INSTANCE_ID=fi-hel
+      - COUNTRY=FI
+      - ADVERTISED_ADDRESS=localhost:3001
+      - DATABASE_USERNAME=root
+      - DATABASE_PASSWORD=rootpassword
+      - DATABASE_ADDRESS=mysql
+      - DATABASE_NAME=demo
+    networks:
+      - backend
+networks:
+  backend:

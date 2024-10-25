@@ -1,0 +1,200 @@
+// This is the logic for serving the game connection
+// A player is queued when they establish connection to the socket
+
+const { getPlayerPool } = require("../service/calculateScoreService");
+const { getGameInfo } = require("../service/gameService");
+const { incrementIdFunctionGenerator } = require("../utils/utils");
+
+// local storage for storing the queue
+// queue store having pools that is the matching function provided by the game, for example, country
+// each pool hold an array that possible of player could group up together, later on, each pool will be sorted based on
+// matching score, after than, each game will be created after a "cron job" (so it is a scheduler)
+
+const queueStore = {}
+const gameStore = {}
+
+function serveWebSocket(dbConnection) {
+    return async function (ws, req) {
+        let payload;
+        let poolName;
+        // use token for authentication too
+        try {
+            const url = new URL(req.url, `http://${req.headers.host}`);
+            payload = JSON.parse(atob(url.searchParams.get("token")));
+        }
+        catch (err) {
+            ws.close(1008, "Invalid token")
+            return;
+        }
+
+        // decorate, used for other closures.
+        payload.ws = ws
+
+        try {
+            const game = await getGameInfo(payload.game_id, dbConnection);
+            if (!(payload.game_id in queueStore)) {
+                queueStore[payload.game_id] = {}
+            }
+            poolName = getPlayerPool(payload, JSON.parse(game.match_formula).match)
+            if (poolName in queueStore[payload.game_id]) {
+                // push connection and info together
+                queueStore[payload.game_id][poolName].push(payload)
+            }
+            else {
+                queueStore[payload.game_id][poolName] = [payload]
+            }
+            console.log(`Player ${payload.user_name}:${payload.user_id} joined game ${payload.game_id} queue in ${poolName} pool`)
+
+            ws.on('close', () => {
+                console.log(`Player ${payload.user_name}:${payload.user_id} leave game ${payload.game_id}`)
+                // remove connection from storage
+
+                if (payload.match_id) {
+                    gameStore[payload.match_id] = gameStore[payload.match_id].filter(client => client.user_id !== payload.user_id)
+                }
+                else {
+                    queueStore[payload.game_id][poolName] = queueStore[payload.game_id][poolName].filter(client => client.user_id !== payload.user_id)
+                }
+            });
+        }
+        catch (err) {
+            ws.close(1008, "Internal Error")
+            console.log("Error :", err)
+            return;
+        }
+    }
+}
+
+// simple algorithm for match the queue
+// basically iterate games -> pools, and then sort and partitions
+// This will not handle, there is only 1 player in the queue :/
+function serveMatchQueueFuncFactory(dbConnection) {
+    // queueStore[1] = {}
+    // queueStore[1]["FI"] =
+    //     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15].map(id => {
+    //         return {
+    //             match_score: id / 10,
+    //             userId: id
+    //         }
+    //     })
+    return function () {
+        // Using map for not putting order in order
+        Object.keys(queueStore).map(game => {
+            Object.keys(queueStore[game]).map(async (pool) => {
+                try {
+                    const poolArray = queueStore[game][pool];
+                    poolArray.sort((p1, p2) => p1.match_score - p2.match_score);
+                    if (poolArray.length === 0) {
+                        return;
+                    }
+                    // Simple algorithm for the pool:
+                    // Using dirichlet's box principle
+                    // example: 
+                    // {
+                    //     totalPlayers: 34,
+                    //     maxGroupSize: 10,
+                    //     numberOfGroups: 4,
+                    //     remainder: 2,
+                    //     baseSize: 8,
+                    //     groupSizeArray: [9,9,8,8]
+                    // }
+                    // good thing about this method is that for number of active player > maxGroupSize /2, 
+                    // there will never be any game room having number of players < (maxGroupSize/2) 
+                    const totalPlayers = poolArray.length
+                    const maxGroupSize = (await getGameInfo(game, dbConnection)).max_player
+                    const numberOfGroups = Math.ceil(totalPlayers / maxGroupSize)
+                    const remainder = totalPlayers % numberOfGroups;
+                    const baseSize = Math.floor(totalPlayers / numberOfGroups);
+                    const groupSizeArray = [
+                        ...(new Array(remainder).fill(baseSize + 1)),
+                        ...(new Array(numberOfGroups - remainder).fill(baseSize))
+                    ];
+                    const groups = [];
+                    let index = 0;
+                    for (let i = 0; i < numberOfGroups; i++) {
+                        groups.push(poolArray.slice(index, index + groupSizeArray[i]));
+                        index = index + groupSizeArray[i];
+                    }
+                    groups.map(async (group) => await startGame(game, group, dbConnection))
+                    //clear pool
+                    queueStore[game][pool] = [];
+                }
+                catch (err) {
+                    console.log(err);
+                }
+            })
+        });
+    }
+}
+
+function startGame(gameId, group, dbConnection) {
+    try {
+        // remember to put match_id into payload
+        const match = createNewGame(gameId, group);
+        group.map(player => player.match_id = match.match_id);
+        gameStore[match.match_id] = group;
+        runMatch(gameId, group);
+    }
+    catch (err) {
+        console.log("Error in starting the game");
+    }
+}
+
+function runMatch(match, group, dbConnection) {
+    // remember to put match_id into payload
+    const info = `Game: ${match.game_id}, match ${match.match_id} started with ${group.length} players`;
+
+    // This will simulate a game that expect the client to feed the input and wrapped as {intput: ${value}} when the client is notified as the game started.
+    console.log(info);
+    const COMMAND = "it is your turn to provide input";
+
+    group.map(client => client.ws.on('message', (message) => {
+        try {
+            const provided_input = JSON.parse(message).input;
+            client.provided_input = provided_input
+        }
+        catch (err) {
+            console.log("Error in parsing message from client", err)
+        }
+    }))
+    group.map(client => client.ws.send(info));
+    group.map(client => client.ws.send(COMMAND));
+    // Client should be notified when the COMMAND is dispatched
+    setTimeout(() => {
+        try {
+
+            closeGame(group);
+        }
+        catch (err) {
+            console.log("Error in finalizing the game", err)
+        }
+        // Now decide who wins
+
+        // And close
+    }, 10000) // interval for a game is 10 seconds
+
+}
+
+function closeGame(group) {
+    group.map(client => {
+        client.ws.send("You win!");
+        client.ws.close("You win!");
+    })
+}
+// it is supposed to save in mysql, but I think I have spend quite some time on this, and already showed the work how to interact with the db
+// so I will use in memory for saving data for the game.
+const matchIdGenerator = incrementIdFunctionGenerator();
+
+function createNewGame(gameId, players) {
+    return {
+        match_id: matchIdGenerator(),
+        game_id: gameId,
+        createTime: new Date(),
+        number_players: players.length
+    }
+}
+
+module.exports = {
+    serveWebSocket,
+    serveMatchQueueFuncFactory
+}
