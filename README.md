@@ -15,12 +15,16 @@ The infrastructure and the backend service of the system should be configurable 
 
 The server should be configurable like where an instance can have id and(or) name, and an address that the client could connect to, such as “fi01.futureplaygame.com”, where it can be discovered by the client.
 Multiple instances can be instanced by the game code, but different configurations, I would take example in my code with
-“fi.futureplaygame.com”,
-“se.futureplaygame.com” 
+
+- “fi.futureplaygame.com”,
+- “se.futureplaygame.com” 
+
 (Where the Finnish server is better than Sweden server, probably as Finnish players are happiest players in the world 😊)
+
 The scaling within 1 region/country could also be done, but I will not going to detail on that as it is just configuration matter.
 The game I also assume: the game is full of the players with players from different levels range, therefore, the game is usually crowed and the criteria for match making usually can find enough players, BUT of course there might be when the late  night time, where there are not many active players, so I would only implement a simple algorithm to handle this case and merging the players when needed.
-Score Matching:
+
+## Score Matching:
 A formal language how to determine the matching scores of the player is also  introduce for flexibility. For example, I will describe a formula that calculate the matching scores with “level / 10”, which means that with the player level, the computation of the score will be player.level /10, and might be rounded. So player level 9 and 11 would end up  the same score, which is 1. This value would help determine to group up players group that have the score closely together.
 
 The game logic should also be described by a formal language, for simplicity, I set the base game is that each user will give an input, and then a function defined could be described, for example:
@@ -29,15 +33,21 @@ Maximum of points: The client will observe some score extracts from the game, an
 So, in general, there would be a formal way to describe the game by the game creator, and I will only implement RANDOM and MAX game strategy.
 
 # API
-For administrators to create the game
+- For administrators to create the game: 
 POST /api/v1/game to create the game,
+
 example payload: 
 {“name":"Guess number","max_player":10,"match_formula":"{\"match\":\"`${country}-pool`\",\"score\":\"level / 10\"}
+
 GET /api/v1/game to get all the games,
+- For conneting to the game
+
 POST /api/v1/hint to ask the server for the personal token to join the game, and which server that the client should connect to
+
 Example payload: { "id": "1", "gameId": "1" }
 Example response: 
 { "token": "eyJ1c2VyX2lkIjoxLCJ1c2VyX25hbWUiOiJBaW5vIiwidXNlcl9sZXZlbCI6NiwidXNlcl9jb3VudHJ5IjoiRkkiLCJtYXRjaF9zY29yZSI6MSwiZ2FtZV9pZCI6IjEifQ==", "service": "localhost:3001/ws" }
+
 Websocket endpoint /ws to serve players during the game.
 
 In the design, I have advertised the connect server for the player, firstly near their location, and then using a match function, to group all of the player having a same name, for example, people located in finland was grouped into the pool called “FI-pool”.
@@ -53,4 +63,3 @@ The implementation is heavily focused on functional programming, as I see the ea
 The choice of language is JavaScript with NodeJS. I thought that it would be faster to code in JavaScript as generic. I do not really have problems coding with generic-typed language, and I think it is much faster for me not to specify tons of interfaces.
 The services are containerized and configurable to be deployed in distributed locations. The way to test it locally is to use “docker compose up”
 Obviously, I spend more than 4 hours to complete this, but as I said, I want to learn about the WebSocket and see the meaning of the assignment, to test out my idea how I would implement the game that I have been playing for a decade.
-
