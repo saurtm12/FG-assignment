@@ -60,8 +60,12 @@ async function setupDatabaseConnetion() {
         // Unregister will not be done and the data is stale when the server is restarted again.
         // This is just an stimulated handling at the database connection error, it shouldnt be this simple
         connection.on("error", err => {
-            console.log("Error from database :", err),
+            console.log("Error from database connetion :", err),
                 runClosers();
+        })
+        context.closers.push(async () => {
+            await connection.end()
+            console.log("Disconnected to databse")
         })
     }
 }
