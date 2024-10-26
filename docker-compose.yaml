@@ -52,5 +52,14 @@ services:
       - DATABASE_NAME=demo
     networks:
       - backend
+  simulator:
+    restart: on-failure
+    build:
+      context: ./simulator
+      dockerfile: Dockerfile
+    # Typically these should be in secret, but for 1 command for testing, putting unharm secret here is okay
+    environment:
+      - ENTRY_HOST=localhost:3002
+    network_mode: host
 networks:
   backend:

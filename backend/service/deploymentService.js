@@ -17,7 +17,7 @@ function getRegisterAcitiveInstanceWorker(db, cfg) {
                 isRegisteredInstance = true;
             }
 
-            console.log("Registerd to database");
+            console.log("Registered to database");
         },
         closer: async function () {
             try {

@@ -23,10 +23,9 @@ function writeError400(res, message) {
 }
 
 function incrementIdFunctionGenerator() {
-    let id = 0;
+    // Change from auto increment to random as intances can generate the same id
     return () => {
-        id += 1;
-        return id;
+        return Math.floor(Math.random() * 1000000);
     }
 }
 module.exports = { runFuncs, assertNotNull, writeError400, writeError500, incrementIdFunctionGenerator }

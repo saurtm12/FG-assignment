@@ -2,7 +2,6 @@
 // See the test for understanding the input
 
 function calculateScore(user, formula) {
-    console.log(user);
     // define more variable here if formula has more variable
     // for now I used only level
     const level = user.user_level;

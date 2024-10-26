@@ -144,6 +144,7 @@ function runMatch(match, group, dbConnection) {
         try {
             const provided_input = JSON.parse(message).input;
             client.provided_input = provided_input
+            console.log(`player ${client.user_name} give input ${provided_input}`)
         }
         catch (err) {
             console.log("Error in parsing message from client", err)
@@ -161,7 +162,7 @@ function runMatch(match, group, dbConnection) {
             // this can also be configurable by defining the fomula.
             // To keep application small, and probably I could might introduce bug with parsing the formal game logic description
             // I will demonstrate with only 1 hardcoded example
-            const GAME_LOGIC = "RAND" 
+            const GAME_LOGIC = "RAND"
             const randomIndex = Math.floor(Math.random() * inputNumbers.length);
             const luckyNumber = inputNumbers[randomIndex];
 
@@ -173,7 +174,7 @@ function runMatch(match, group, dbConnection) {
             group.map(player => {
                 player.ws.send(info);
             })
-            
+
             closeGame(group);
         }
         catch (err) {
@@ -190,10 +191,10 @@ function closeGame(group) {
         client.ws.close(1000, "Socket closed");
     })
 }
+
+const matchIdGenerator = incrementIdFunctionGenerator();
 // it is supposed to save in mysql, but I think I have spend quite some time on this, and already showed the work how to interact with the db
 // so I will use in memory for saving data for the game.
-const matchIdGenerator = incrementIdFunctionGenerator();
-
 function createNewGame(gameId, players) {
     return {
         match_id: matchIdGenerator(),

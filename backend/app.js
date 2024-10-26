@@ -7,7 +7,7 @@ const {
   runClosers,
   setUpWebSocketListener,
   setUpConfig,
-  setUpGameMatchScheduler 
+  setUpGameMatchScheduler
 } = require('./appContext');
 const { runFuncs } = require('./utils/utils');
 
