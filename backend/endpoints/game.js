@@ -17,7 +17,8 @@ const gameStore = {}
 // the queue is full up fast and we can organize the games before the scheduler.
 const QUEUE_THRESHOLD = 500;
 let numberOfClientsOnQueue = 0;
-function serveWebSocket(dbConnection) {
+
+function serveWebSocketOnCreationFuncFactory(dbConnection) {
     return async function (ws, req) {
         let payload;
         let poolName;
@@ -31,7 +32,7 @@ function serveWebSocket(dbConnection) {
             return;
         }
 
-        // decorate, used for other closures.
+        // decorate, used for other places.
         payload.ws = ws;
         numberOfClientsOnQueue += 1;
         try {
@@ -130,6 +131,8 @@ function serveMatchQueueFuncFactory(dbConnection) {
     }
 }
 
+// Place holder for interaction with DB, for poc, dbConnection is not used
+// eslint-disable-next-line no-unused-vars
 function startGame(gameId, group, dbConnection) {
     try {
         // remember to put match_id into payload
@@ -142,9 +145,8 @@ function startGame(gameId, group, dbConnection) {
         console.log("Error in starting the game", err);
     }
 }
-
+// eslint-disable-next-line no-unused-vars
 function runMatch(match, group, dbConnection) {
-    // remember to put match_id into payload
     const info = `Game: ${match.game_id}, match ${match.match_id} started with ${group.length} players`;
 
     // This will simulate a game that expect the client to feed the input and wrapped as {intput: ${value}} when the client is notified as the game started.
@@ -173,6 +175,7 @@ function runMatch(match, group, dbConnection) {
             // this can also be configurable by defining the fomula.
             // To keep application small, and probably I could might introduce bug with parsing the formal game logic description
             // I will demonstrate with only 1 hardcoded example
+            // eslint-disable-next-line no-unused-vars
             const GAME_LOGIC = "RAND"
             const randomIndex = Math.floor(Math.random() * inputNumbers.length);
             const luckyNumber = inputNumbers[randomIndex];
@@ -216,6 +219,6 @@ function createNewGame(gameId, players) {
 }
 
 module.exports = {
-    serveWebSocket,
+    serveWebSocketOnCreationFuncFactory,
     serveMatchQueueFuncFactory
 }

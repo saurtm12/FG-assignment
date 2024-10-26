@@ -4,6 +4,7 @@
 function calculateScore(user, formula) {
     // define more variable here if formula has more variable
     // for now I used only level
+    // eslint-disable-next-line no-unused-vars
     const level = user.user_level;
     // formula is, example "level / 10", eval will evaluate level / 10 by the variable
     // using val() for simplicty
@@ -15,6 +16,7 @@ function calculateScore(user, formula) {
 
 // example of match Formula: `${country}`
 function getPlayerPool(payload, matchFormula) {
+    // eslint-disable-next-line no-unused-vars
     const country = payload.user_country;
     // using val() for simplicty
     const result = eval(matchFormula);

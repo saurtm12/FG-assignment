@@ -6,7 +6,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const { runFuncs, assertNotNull } = require('./utils/utils');
 const { setupAppEndpoint } = require('./api/server');
-const { serveWebSocket, serveMatchQueueFuncFactory } = require('./endpoints/game');
+const { serveWebSocketOnCreationFuncFactory, serveMatchQueueFuncFactory } = require('./endpoints/game');
 const { getRegisterAcitiveInstanceWorker } = require('./service/deploymentService');
 
 const context = {
@@ -17,8 +17,7 @@ const context = {
     app: null,
     server: null,
     databaseConnection: null,
-    wss: null,
-    isRegisteredInstance: false
+    wss: null
 }
 
 
@@ -79,13 +78,15 @@ async function setUpResigtrationAndUnregistrationRunner() {
 
 async function setUpServer() {
     console.log("Setting up Server")
-
-    context.app = express();
-    context.server = http.createServer(context.app);
-
-    context.app.use(express.json());
-
-    setupAppEndpoint(context.app, context.databaseConnection);
+    if (context.app === null || context.server === null){
+        context.app = express();
+        context.server = http.createServer(context.app);
+    
+        context.app.use(express.json());
+    
+        setupAppEndpoint(context.app, context.databaseConnection);
+    }
+    
 }
 
 async function setUpWebSocketListener() {
@@ -95,7 +96,7 @@ async function setUpWebSocketListener() {
         server: context.server,
         path: "/ws"
     });
-    context.wss.on('connection', serveWebSocket(context.databaseConnection));
+    context.wss.on('connection', serveWebSocketOnCreationFuncFactory(context.databaseConnection));
 }
 
 async function setUpGameMatchScheduler() {
@@ -103,8 +104,8 @@ async function setUpGameMatchScheduler() {
 
     let intervalId = undefined;
     context.runners.push(async () => {
-        // interval could be configurable by env or database
         console.log("Starting scheduler");
+        // interval could be configurable by env or database
         intervalId = setInterval(serveMatchQueueFuncFactory(context.databaseConnection), 20000)
     })
     context.closers.push(async () => {
