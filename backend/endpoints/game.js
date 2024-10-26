@@ -79,8 +79,8 @@ function serveWebSocket(dbConnection) {
 // basically iterate games -> pools, and then sort and partitions
 // This will not handle, there is only 1 player in the queue :/
 function serveMatchQueueFuncFactory(dbConnection) {
-    numberOfClientsOnQueue = 0;
     return function () {
+        numberOfClientsOnQueue = 0;
         // Using map for not putting order in order
         Object.keys(queueStore).map(game => {
             Object.keys(queueStore[game]).map(async (pool) => {
