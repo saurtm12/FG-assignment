@@ -13,6 +13,10 @@ const { incrementIdFunctionGenerator } = require("../utils/utils");
 const queueStore = {}
 const gameStore = {}
 
+// using thresh_hold as simple way to handle that during the peak time,
+// the queue is full up fast and we can organize the games before the scheduler.
+const QUEUE_THRESHOLD = 500;
+let numberOfClientsOnQueue = 0;
 function serveWebSocket(dbConnection) {
     return async function (ws, req) {
         let payload;
@@ -28,8 +32,8 @@ function serveWebSocket(dbConnection) {
         }
 
         // decorate, used for other closures.
-        payload.ws = ws
-
+        payload.ws = ws;
+        numberOfClientsOnQueue += 1;
         try {
             const game = await getGameInfo(payload.game_id, dbConnection);
             if (!(payload.game_id in queueStore)) {
@@ -48,7 +52,7 @@ function serveWebSocket(dbConnection) {
             ws.on('close', () => {
                 console.log(`Player ${payload.user_name}:${payload.user_id} leave game ${payload.game_id}`)
                 // remove connection from storage
-
+                numberOfClientsOnQueue -= 1;
                 if (payload.match_id) {
                     gameStore[payload.match_id] = gameStore[payload.match_id].filter(client => client.user_id !== payload.user_id)
                 }
@@ -56,9 +60,15 @@ function serveWebSocket(dbConnection) {
                     queueStore[payload.game_id][poolName] = queueStore[payload.game_id][poolName].filter(client => client.user_id !== payload.user_id)
                 }
             });
+
+            // We can match the game if we have enough people in queue
+            if (numberOfClientsOnQueue > QUEUE_THRESHOLD) {
+                serveMatchQueueFuncFactory(dbConnection)();
+            }
         }
         catch (err) {
             ws.close(1008, "Internal Error")
+            numberOfClientsOnQueue -= 1;
             console.log("Error :", err)
             return;
         }
@@ -69,6 +79,7 @@ function serveWebSocket(dbConnection) {
 // basically iterate games -> pools, and then sort and partitions
 // This will not handle, there is only 1 player in the queue :/
 function serveMatchQueueFuncFactory(dbConnection) {
+    numberOfClientsOnQueue = 0;
     return function () {
         // Using map for not putting order in order
         Object.keys(queueStore).map(game => {
