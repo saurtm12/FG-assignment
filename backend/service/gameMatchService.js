@@ -21,7 +21,11 @@ function removePlayerFromMatch(player, matchId) {
         return
     }
     // player leave when game is started/inprogress
-    matchStore[matchId] = matchStore[matchId].filter(client => client.user_id !== player.user_id)
+    // modify reference of array
+    const index = matchStore[matchId].findIndex(client => client.user_id === player.user_id);
+    if (index !== -1) {
+        matchStore[matchId].splice(index, 1)
+    }
 }
 
 function changeMatchState(matchId, state) {

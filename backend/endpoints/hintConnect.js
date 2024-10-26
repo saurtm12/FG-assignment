@@ -2,7 +2,7 @@
 
 const { calculateScore } = require("../service/calculateScoreService");
 const { getGameInfo } = require("../service/gameService");
-const { getUserandPromotedInstanceForNewGame } = require("../service/userandLocationService");
+const { getUserandPromotedInstanceForNewGame } = require("../service/userAndLocationService");
 const { writeError500 } = require("../utils/utils");
 
 

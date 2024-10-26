@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     `country` VARCHAR(2)
 );
 
--- Creating mock user
+-- Creating mock users
 INSERT INTO user (name, level, country)
 VALUES
 ('Aino', 6, 'FI'),
@@ -76,13 +76,13 @@ VALUES
     'MAX'
 );
 
--- CREATE ACTIVE PLAYER:
-
 
 CREATE TABLE IF NOT EXISTS `match` (
     `id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    `startTime` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `game_id` INT NOT NULL,
+    `createTime` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `number_players` INT NOT NULL,
+    `status` ENUM('started', 'inprogress', 'ended'),
     `endTime` TIMESTAMP
 );
 

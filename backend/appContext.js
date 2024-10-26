@@ -127,7 +127,7 @@ async function setUpServerRunner() {
             console.log("STARTING SERVER");
             const PORT = process.env.PORT || 3000;
             context.server.listen(PORT, () => {
-                console.log(`Server is running on ${context.cfg.ADVERTISED_ADDRESS}`);
+                console.log(`Server is running on ${context.cfg.advertisedAddress}`);
             });
         }
     )

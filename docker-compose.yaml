@@ -14,7 +14,17 @@ services:
       - backend
     volumes:
       - ./mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
   fi-hel-service:
+    depends_on:
+      mysql:
+        condition: service_healthy
     restart:
       always
     build:
@@ -33,7 +43,14 @@ services:
       - DATABASE_NAME=demo
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/game"]
+      interval: 3s
+      start_period: 60s
   se-sto-service:
+    depends_on:
+      mysql:
+        condition: service_healthy
     restart:
       always
     build:
@@ -52,7 +69,14 @@ services:
       - DATABASE_NAME=demo
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/game"]
+      interval: 3s
+      start_period: 60s
   simulator:
+    depends_on:
+        fi-hel-service:
+          condition: service_started
     restart: on-failure
     build:
       context: ./simulator
@@ -61,5 +85,6 @@ services:
     environment:
       - ENTRY_HOST=localhost:3002
     network_mode: host
+
 networks:
   backend:
