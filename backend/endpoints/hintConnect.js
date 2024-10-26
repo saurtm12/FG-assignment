@@ -2,31 +2,8 @@
 
 const { calculateScore } = require("../service/calculateScoreService");
 const { getGameInfo } = require("../service/gameService");
+const { getUserandPromotedInstanceForNewGame } = require("../service/userandLocationService");
 const { writeError500 } = require("../utils/utils");
-
-// this cant return empty as at least this endpoint is serving.
-// basic algorithm for choosing the promoted server serving client game
-// (I choosed that the country matched)
-// This query should at least return 1 for advertised server 
-// (i.e, if country not matched, then closest server with status active should be responsible)
-// Advanced algorithm could be selected as, for example, 1 country could have multiple hosts
-const GET_PROMOTED_SERVER_AND_PLAYER = `
-SELECT 
-    u.id AS user_id,
-    u.name AS user_name,
-    u.level AS user_level,
-    u.country AS user_country,
-    s.instance_name AS server_instance_name,
-    s.advertised_address AS server_address
-FROM 
-    user u
-JOIN 
-    server s 
-ON 
-    u.country = s.country
-WHERE 
-    u.id = ? AND s.status = 'active';`
-
 
 
 // HandleGetHint server that the client will talk to during the game with contain
@@ -38,7 +15,7 @@ WHERE
 // for SIMPLICITY, I will only base64 encoding and decoding
 // and no timestamp injecting is done
 // return example: 
-// {token: "e2lkOiAiMSIsIG5hbWU6ICJkdWMifQ==", service: "localhost:3000"}
+// {token: "e2lkOiAiMSIsIG5hbWU6ICJkdWMifQ==", service: "localhost:3000/ws"}
 // where token could be finally decode like this:
 // {
 //     "user_id": 12,
@@ -51,18 +28,17 @@ WHERE
 // After this, client connect to localhost:3001 through websocket
 async function handleGetHint(dbConnection, userId, gameId, res) {
     try {
-
-        const [[row]] = await dbConnection.execute(GET_PROMOTED_SERVER_AND_PLAYER, [userId]);
+        const userWithAdvertisedUrl = await getUserandPromotedInstanceForNewGame(dbConnection, userId);
         const game = await getGameInfo(gameId, dbConnection);
         const criteria = JSON.parse(game.match_formula);
-        calculateScore(row, criteria.score);
-        row.game_id = gameId
-        const payload = { ...row }
+        calculateScore(userWithAdvertisedUrl, criteria.score);
+        userWithAdvertisedUrl.game_id = gameId
+        const payload = { ...userWithAdvertisedUrl }
         delete payload.server_address;
-        delete payload.server_instance_name;
         res.json({
+            // Suppose to encode with jwt
             token: btoa(JSON.stringify(payload)),
-            service: `${row.server_address}/ws`
+            service: `${userWithAdvertisedUrl.server_address}/ws`
         });
 
     }
