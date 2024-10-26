@@ -6,9 +6,10 @@
 const { incrementIdFunctionGenerator } = require("../utils/utils");
 
 // only for started and inprogress matches
+// matchStore :: {matchId -> [players]}
 const matchStore = {}
 
-// gameStore :: {match_Id -> state("started", "inprogress", "ended")}
+// gameStore :: {matchId -> state("started", "inprogress", "ended")}
 const matchState = {}
 const STATES = ["started", "inprogress", "ended"];
 const [STARTED, INPROGRESS, ENDED] = STATES

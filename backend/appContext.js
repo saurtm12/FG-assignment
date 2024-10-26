@@ -82,25 +82,23 @@ async function setUpResigtrationAndUnregistrationRunner() {
 
 async function setUpServer() {
     console.log("Setting up Server")
-    if (context.app === null || context.server === null){
+    if (context.app === null || context.server === null) {
         context.app = express();
         context.server = http.createServer(context.app);
-    
         context.app.use(express.json());
-    
         setupAppEndpoint(context.app, context.databaseConnection);
     }
-    
 }
 
 async function setUpWebSocketListener() {
     console.log("Setting up WebSocket server")
-
-    context.wss = new WebSocket.Server({
-        server: context.server,
-        path: "/ws"
-    });
-    context.wss.on('connection', serveWebSocketOnCreationFuncFactory(context.databaseConnection));
+    if (context.wss === null) {
+        context.wss = new WebSocket.Server({
+            server: context.server,
+            path: "/ws"
+        });
+        context.wss.on('connection', serveWebSocketOnCreationFuncFactory(context.databaseConnection));
+    }
 }
 
 async function setUpGameMatchScheduler() {

@@ -26,7 +26,7 @@ function setupAppEndpoint(app, dbConnection) {
     app.post("/api/v1/game", servePostV1Game(dbConnection))
     app.get("/api/v1/game", serveGetV1Game(dbConnection))
     // will not go to delete/put game as they are not that complicated 
-    // only thing is to deal with the update and the cache, in the distrubuted system, the cache is shared
+    // only thing is to deal with the update and delete is the cache, in the distrubuted system, the cache is shared
     app.post("/api/v1/hint", servePostV1Hint(dbConnection))
 }
 

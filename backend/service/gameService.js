@@ -13,6 +13,10 @@ const CREATE_GAME =
     INSERT INTO game (name, max_player, match_formula, logic)
     VALUES (?, ?, ?, ?);
     `
+
+// I assume here that the game creation is done once and it hardly changes after
+// Of course for the cache, it should be invalidated after some time
+// so gameStore cache, in real life, it will delete the cache of game after the cache expired.
 async function getGameInfo(gameId, db) {
     try {
         const id = parseInt(gameId);
@@ -40,7 +44,6 @@ async function getAllGames(db) {
         throw new Error("Uh oh, something wrong happened" + err)
     }
 }
-
 
 async function createGame(db, game) {
     try {

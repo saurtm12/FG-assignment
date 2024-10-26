@@ -44,7 +44,11 @@ async function matchGroupsForQueueAndClear(getGameInfo, groupHandler) {
                 //     groupSizeArray: [9,9,8,8]
                 // }
                 // good thing about this method is that for number of active player > maxGroupSize /2, 
-                // there will never be any game room having number of players < (maxGroupSize/2) 
+                // there will never be any game room having number of players < (maxGroupSize/2)
+                // With enough large of total player, there will be less than ${maxGroupSize} groups that have {maxGroupSize -1} players, 
+                // and other groups are all filled with maximum player
+                // i.e 256 players with max game slots of 10 will be distributed with 4 groups of 9, and 22 groups of 10.
+                // And I think this is acceptable for simplicity
                 const totalPlayers = poolArray.length
                 const maxGroupSize = (await getGameInfo(gameId)).max_player
                 const numberOfGroups = Math.ceil(totalPlayers / maxGroupSize)

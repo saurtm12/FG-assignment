@@ -4,7 +4,7 @@
 // (I choosed that the country matched)
 // This query should at least return 1 for advertised server 
 // (i.e, if country not matched, then closest server with status active should be responsible)
-// Advanced algorithm could be selected as, for example, 1 country could have multiple hosts
+// Advanced algorithm could be implemented, for example, 1 country could have multiple hosts
 const GET_PROMOTED_SERVER_AND_PLAYER = `
 SELECT 
     u.id AS user_id,
