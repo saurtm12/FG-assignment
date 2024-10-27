@@ -66,9 +66,10 @@ function serveWebSocketOnCreationFuncFactory(dbConnection) {
 }
 
 function serveMatchQueueFuncFactory(dbConnection) {
+    // constructing gameInfo service
+    const getGameInfoFunc = async (gameId) => await getGameInfo(gameId, dbConnection);
     return function () {
         numberOfClientsOnQueue = 0;
-        const getGameInfoFunc = async (gameId) => await getGameInfo(gameId, dbConnection);
         matchGroupsForQueueAndClear(
             getGameInfoFunc,
             startGame
